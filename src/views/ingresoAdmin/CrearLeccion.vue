@@ -146,7 +146,7 @@ const mostrarFracciones = (leccion) => {
 };
 
 const mensajeConsola = (row) => {
-  console.log('Fila seleccionada:', row.id_leccion);
+  console.log('Fila cliqueada:', row.id_leccion);
 };
 
 const clicEditarCelda = (row, columnKey) => {
