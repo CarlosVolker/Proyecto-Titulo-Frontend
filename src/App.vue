@@ -15,3 +15,6 @@ const handleSwitchView = (view) => {
   }
 };
 </script>
+
+<style>
+</style>

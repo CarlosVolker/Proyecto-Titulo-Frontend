@@ -4,18 +4,31 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 192.168.1.86",
+    "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@primevue/themes": "^4.2.5",
     "axios": "^1.7.9",
+    "bootstrap": "^5.3.3",
+    "datatables.net": "^2.1.8",
+    "datatables.net-bs5": "^2.1.8",
+    "datatables.net-buttons-bs5": "^3.2.0",
+    "datatables.net-responsive-bs5": "^3.0.3",
+    "datatables.net-select": "^2.1.0",
+    "datatables.net-vue3": "^3.0.3",
+    "jszip": "^3.10.1",
+    "pdfmake": "^0.2.18",
+    "primevue": "^4.2.5",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
     "vuex": "^4.0.2"
   },
   "devDependencies": {
+    "@primevue/auto-import-resolver": "^4.2.5",
     "@vitejs/plugin-vue": "^5.2.1",
+    "unplugin-vue-components": "^0.28.0",
     "vite": "^6.0.5",
     "vite-plugin-vue-devtools": "^7.6.8"
   }

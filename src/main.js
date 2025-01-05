@@ -3,6 +3,9 @@ import App from './App.vue';
 import router from './router';
 import store from './store';
 import axios from './axios'; // Importa la instancia de Axios configurada
+import PrimeVue from 'primevue/config';
+
+//import $ from 'jquery';
 
 // Configura Axios para incluir el token de autenticación en las solicitudes
 axios.interceptors.request.use(config => {
@@ -16,6 +19,8 @@ axios.interceptors.request.use(config => {
 });
 
 const app = createApp(App);
+
+
 
 app.use(router);
 app.use(store);

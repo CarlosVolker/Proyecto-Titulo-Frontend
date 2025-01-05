@@ -14,6 +14,7 @@
       <p>Unidad de Combate: {{ user.unidad_combate }}</p>
       <p>Unidad Fundamental: {{ user.unidad_fundamental }}</p>
     </div>
+
   </div>
 </template>
 
@@ -45,3 +46,5 @@ h2 {
   color: aliceblue;
 }
 </style>
+
+

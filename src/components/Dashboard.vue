@@ -1,20 +1,28 @@
 <template>
-  <div class="dashboard">
-    <nav class="sidebar">
+  <div class="dashboard-layout">
+    <nav class="sidebar" :class="{ collapsed: isSidebarCollapsed }">
+      <button class="toggle-button" @click="toggleSidebar">
+        {{ isSidebarCollapsed ? '>>' : '<<' }}
+      </button>
       <ul class="menu-superior">
-        <li v-for="(item, index) in menuItemsSuperior" :key="index" :class="{ active: item.active }" @click="navigate(item.text)">
+        <li 
+          v-for="(item, index) in menuItemsSuperior" 
+          :key="index" 
+          :class="{ active: item.active }" 
+          @click="navigate(item.text)"
+        >
           {{ item.text }}
         </li>
       </ul>
       <ul class="menu-inferior">
-        <li v-for="(item, index) in menuItemsInferior" :key="index" @click="navigate(item.text)">
-          {{ item.text }}
-          <a v-if="item.logOutButton === 'CERRAR SESIÓN'" @click="logout">{{ item.logOutButton }}</a>
+        <li v-for="(item, index) in menuItemsInferior" :key="index">
+          <span @click="navigate(item.text)" v-if="item.text">{{ item.text }}</span>
+          <a v-if="item.logOutButton" @click="logout">{{ item.logOutButton }}</a>
         </li>
       </ul>
     </nav>
-    <main class="content">
-      
+    <main class="content" :class="{ expanded: isSidebarCollapsed }">
+      <slot></slot>
     </main>
   </div>
 </template>
@@ -27,8 +35,12 @@ import { useRouter } from 'vue-router';
 const store = useStore();
 const router = useRouter();
 const userType = computed(() => store.state.userType);
+const isSidebarCollapsed = ref(false);
 
-// Menus para cada tipo de usuario
+const toggleSidebar = () => {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value;
+};
+
 const menuItemsSuperior = computed(() => {
   switch (userType.value) {
     case 'admin':
@@ -54,37 +66,20 @@ const menuItemsSuperior = computed(() => {
       return [];
   }
 });
+
 const menuItemsInferior = computed(() => {
-  switch (userType.value) {
-    case 'admin':
-      return [
-        { text: 'PERFIL' },
-        { text: 'CONFIGURACIÓN' },
-        { logOutButton: 'CERRAR SESIÓN' }
-      ];
-    case 'limitado':
-      return [
-        { text: 'PERFIL' },
-        { text: 'CONFIGURACIÓN' },
-        { logOutButton: 'CERRAR SESIÓN' }
-      ];
-    case 'tirador':
-      return [
-        { text: 'PERFIL' },
-        { text: 'CONFIGURACIÓN' },
-        { logOutButton: 'CERRAR SESIÓN' }
-      ];
-    default:
-      return [];
-  }
+  return [
+    { text: 'PERFIL' },
+    { text: 'CONFIGURACIÓN' },
+    { logOutButton: 'CERRAR SESIÓN' }
+  ];
 });
 
-// Manejo de la navegación
 const navigate = (menuItem) => {
   const basePath = `/${userType.value}`;
-  if (menuItem === 'INICIO'){
+  if (menuItem === 'INICIO') {
     router.push('/');
-  } else if (menuItem === 'CREAR LECCIÓN'){
+  } else if (menuItem === 'CREAR LECCIÓN') {
     router.push(`${basePath}/crear-leccion`);
   } else if (menuItem === 'BUSCAR') {
     router.push(`${basePath}/buscar`);
@@ -93,8 +88,8 @@ const navigate = (menuItem) => {
   } else if (menuItem === 'CONFIGURACIÓN') {
     router.push(`${basePath}/configuracion`);
   }
-}
-// Manejo del cierre de sesión
+};
+
 const logout = () => {
   store.commit('logout');
   router.push('/login');
@@ -102,61 +97,91 @@ const logout = () => {
 </script>
 
 <style scoped>
-.dashboard {
+.dashboard-layout {
   display: flex;
-  background-image: url('../assets/fondosWeb/FondoDashboard.jpg');
-  background-size: cover;
-  background-position: center;
   height: 100vh;
-  font-family: "Asap", sans-serif;
+  background-color: #f0f2f5;
 }
 
 .sidebar {
-  width: 200px;
-  background-color: rgba(248, 249, 250, 0.0);
+  width: 250px;
+  background-color: transparent;
+  background-image: url('@/assets/fondosWeb/FondoDashboard.jpg') ; /* Ruta correcta */
+  background-size: cover; /* Ajusta la imagen para que cubra todo el espacio */
+  background-position: center; /* Centra la imagen */
+  background-repeat: no-repeat; /* Evita que la imagen se repita */
+  text-align: center;
+  color: white;
+  transition: width 0.3s ease;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  align-items: center;
+  overflow: hidden;
 }
 
-.menu-superior {
-  list-style-type: none;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: auto;
+.sidebar.collapsed {
+  width: 60px;
 }
 
-.menu-inferior {
-  list-style-type: none;
+.toggle-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  margin: 10px;
+  align-self: flex-end;
+}
+
+.menu-superior, .menu-inferior {
+  list-style: none;
   padding: 0;
-  display: flex;
-  margin-top: auto;
-  flex-direction: column;
-  align-items: center;
+  margin: 0;
 }
 
 .sidebar li {
-  padding: 10px;
+  padding: 15px 20px;
   cursor: pointer;
-  color: azure;
   font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar li.active {
-  background-color: #bababa;
-  color: white;
-}
-
-.sidebar li a {
-  text-decoration: none;
-  color: inherit;
+  background-color: #3b3b4f;
+  color: #fff;
 }
 
 .content {
   flex: 1;
-  padding: 0px;
+  padding: 20px;
+  transition: margin-left 0.3s ease;
+}
+
+.content.expanded {
+  margin-left: 60px;
+}
+
+@media screen and (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    height: 100%;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar.collapsed {
+    transform: translateX(0);
+  }
+
+  .content {
+    margin-left: 0;
+  }
+
+  .content.expanded {
+    margin-left: 0;
+  }
 }
 </style>
