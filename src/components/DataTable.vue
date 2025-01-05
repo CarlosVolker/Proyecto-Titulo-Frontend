@@ -1,5 +1,8 @@
 <template>
   <div>
+    <button @click="editarTerminar" :disabled="rows.length === 0">
+      {{ isEditMode ? 'Terminar' : 'Editar' }}
+    </button>
     <table>
       <thead>
         <tr>
@@ -15,18 +18,18 @@
             <template v-if="column.editable && isEditing[row[rowKey] + column.key]">
               <input
                 v-model="row[column.key]"
-                @blur="cancelEdit(row, column.key)"
-                @keydown.enter="saveEdit(row, column.key)"
-                @keydown.esc="cancelEdit(row, column.key)"
+                @keydown.enter="saveEdit(row, column.key, 'guardar')"
+                @keydown.tab="saveEdit(row, column.key, 'guardar')"
+                @keydown.esc="cancelEdit(row, column.key, 'cancelar')"
+                @input="validarInput(row, column.key)"
                 :placeholder="'Edit ' + column.label"
                 class="editable-input"
                 type="number"
-                autofocus
               />
             </template>
             <!-- Non-editable cells -->
             <template v-else>
-              <span @click="startEditing(row, column.key)">
+              <span >
                 {{ row[column.key] }}
               </span>
             </template>
@@ -38,11 +41,11 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, onMounted, onBeforeUnmount } from 'vue';
+import { ref, defineProps, defineEmits } from 'vue';
 import axios from '@/axios';
 
 // Recibir las propiedades del componente
-const { rowKey = 'id', rows } = defineProps({
+const { columns, rowKey = 'id', rows } = defineProps({
   columns: {
     type: Array,
     default: () => []
@@ -60,39 +63,61 @@ const { rowKey = 'id', rows } = defineProps({
 const emit = defineEmits();
 const isEditing = ref({});  // Mantener el estado de edición de cada celda
 
-// Función para iniciar la edición de una celda
-const startEditing = (row, columnKey) => {
-  // Sólo activar la edición para la celda específica
-  isEditing.value[`${row[rowKey]}${columnKey}`] = true;
-  emit('cell-click', row, columnKey);  // Emitir el clic de la celda
+const validarInput = (row, columnKey) => {
+  if (row[columnKey] === '' || row[columnKey] < 0) {
+    row[columnKey] = 0;
+  }
+};
+
+const isEditMode = ref(false);
+
+const editarTerminar = () => {
+  isEditMode.value = !isEditMode.value;
+  if (isEditMode.value) {
+    rows.forEach(row => {
+      columns.forEach(column => {
+        if (column.editable) {
+          isEditing.value[`${row[rowKey]}${column.key}`] = true;
+        }
+      });
+    });
+  } else {
+    rows.forEach(row => {
+      columns.forEach(column => {
+        if (column.editable) {
+          delete isEditing.value[`${row[rowKey]}${column.key}`];
+        }
+      });
+    });
+  }
+  //isEditMode.value = !isEditMode.value;
 };
 
 // Función para guardar la edición
-const saveEdit = async (row, columnKey) => {
-  console.log('Editando sobre ID: ', row.id_leccion);
-  console.log('columnKey:', columnKey);
-  console.log('row:', row);
-  console.log('row[columnKey]:', row[columnKey]);
-  
-  const id_edit = row.id_leccion; //obtiene ID de la fila
-  console.log('id_edit:', id_edit);
-  const daata = {
-    [columnKey]: row[columnKey]
-  }
-  console.log('data:', daata);
-  try {
-    const response = await axios.patch(`lecciones/${row.id_leccion}/`, daata);
-    console.log('Respuesta del servidor:', response.data);
-  } catch (error) {
-    console.error('Error al guardar la edición:', error);
-  }
-  console.log('Edición Cerrada', row);
-  // Aquí podrías hacer algo con la edición, como actualizar el servidor.
-  delete isEditing.value[`${row[rowKey]}${columnKey}`];  // Devolver la celda a no editable
+const saveEdit = async (row, columnKey, accion) => {
+  if (accion === 'guardar') {
+/*     console.log('Editando sobre ID: ', row.id_leccion);
+    console.log('columnKey:', columnKey);
+    console.log('row:', row);
+    console.log('row[columnKey]:', row[columnKey]);
+    
+    const id_edit = row.id_leccion; //obtiene ID de la fila
+    console.log('id_edit:', id_edit); */
+    const daata = {
+      [columnKey]: row[columnKey]
+    }
+    //console.log('data:', daata);
+    try {
+      const response = await axios.patch(`lecciones/${row.id_leccion}/`, daata);
+      console.log('Datos Guardados', response.data.distancia);
+    } catch (error) {
+      console.error('Error al guardar la edición:', error);
+    }
+    console.log('Edición Cerrada');
+  } 
 };
 
 const cancelEdit = (row, columnKey) => {
-  console.log('Edición Cancelada');
   delete isEditing.value[`${row[rowKey]}${columnKey}`];  // Devolver la celda a no editable
 }
 
