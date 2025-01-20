@@ -1,13 +1,17 @@
 <template>
   <div>
     <h1>Gestión de Lecciones de Tiro</h1>
-
+    <!--VISTA LECCIONES-->
     <template v-if="tablaActual === 'lecciones'">
       <div class="poligono-container">
         <h3>Polígono detalle:</h3>
         <label for="poligono-select">Seleccionar un Polígono</label>
         <select id="poligono-select" v-model="poligonoSeleccionado" @change="cargarLecciones">
-          <option v-for="poligono in poligonos" :key="poligono.id_poligono" :value="poligono.id_poligono">
+          <option 
+          v-for="poligono in poligonos" 
+          :key="poligono.id_poligono" 
+          :value="poligono.id_poligono"
+          >
             {{ poligono.nombre }}
           </option>
         </select>
@@ -16,16 +20,15 @@
           <label v-if="poligonoActual">Carriles Máximos: {{ poligonoActual.carriles_maximos }}</label>
           <label v-if="poligonoActual">Distancia Máxima: {{ poligonoActual.distancia_maxima }} mts.</label>
         </div>
-      
       </div>
 
       <div>
-        <button @click="abrirModal('poligono')">Agregar Polígono</button>
-        
+        <button @click="abrirModal('poligono')">Agregar Polígono</button>     
         <Modal
         :visible="modalVisible" 
         :title="modalTitle" 
         @close="cerrarModal">
+        <!--FORMULARIO CREAR POLIGONO-->
         <template v-if="modalType === 'poligono'">
           <form @submit.prevent="crearPoligono">
             <input type="text" id="nombre" v-model="nuevoPoligono.nombre" placeholder="Nombre Polígono" required>
@@ -36,6 +39,7 @@
           </form>
         </template>
 
+        <!--FORMULARIO CREAR LECCION-->
         <template v-else-if="modalType === 'leccion'">
           <form @submit.prevent="crearLeccion">
             <input type="date" id="fecha-tiro" v-model="nuevaLeccion.fecha_tiro" placeholder="Fecha de Tiro" required>
@@ -50,27 +54,28 @@
             <input type="number" id="distancia" v-model="nuevaLeccion.distancia" placeholder="Distancia (m)" required>
             <button type="submit">Guardar</button>
           </form>
-
-        </template>
+        </template> 
         </Modal>
       </div>
 
       <div>
         <h2>Lecciones de Tiro</h2>
         <button @click="abrirModal('leccion')">Agregar Lección</button>
+
         <DataTable 
         :columns="columnasLecciones" 
         :rows="lecciones" 
         rowKey="id_leccion"
         @row-click="cargarFracciones"
         />
-
       </div>
     </template>
 
+    <!--VISTA FRACCIONES-->
     <template v-else-if="tablaActual === 'fracciones'">
       <h2>Fracciones de Tiro</h2>
       <button @click="volverALecciones">Volver</button>
+      <button @click="crearFraccion">Agregar Fracción</button>
       <DataTable
       :columns="columnasFracciones"
       :rows="fracciones"
@@ -80,27 +85,63 @@
       </DataTable>
     </template>
 
+    <!--VISTA TIRADORES-->
     <template v-else-if="tablaActual === 'tiradores'">
       <h2>Fracciones de Tiro</h2>
       <button @click="volverAFracciones">Volver</button>
+      <button @click="abrirModal('tiradores')">Agregar Tiradores</button>
+
       <DataTable
       :columns="columnasTiradores"
       :rows="tiradores"
-      rowKey="id_resultado"
-      
-      >
-      </DataTable>
+      rowKey="id_resultado"  
+      />
+
+      <Modal
+        :visible="modalVisible" 
+        :title="modalTitle" 
+        @close="cerrarModal">
+        <!--FORMULARIO PARA CREAR TIRADORES(USUARIO, ARMA Y RESULTADO)-->
+        <template v-if="modalType === 'tiradores'">
+          <form @submit.prevent="guardarTirador">
+            <input type="text" id="rut" v-model="nuevoTirador.rut" placeholder="RUT" required @input="buscarSugerencias"/>
+            <!--SUGERENCIAS-->
+            <ul v-if="mostrarSugerencias">
+              <li
+                v-for="usuario in sugerencias"
+                :key="usuario.rut"
+                @click="seleccionarUsuario(usuario)"
+                >
+                {{ usuario.rut }} - {{ usuario.nombre }}
+              </li>
+            </ul>
+
+            <input type="email" id="correo" v-model="nuevoTirador.correo" placeholder="Correo">
+            <input type="text" id="grado" v-model="nuevoTirador.grado" placeholder="Grado">
+            <input type="text" id="apellido-paterno" v-model="nuevoTirador.apellido_paterno" placeholder="Apellido Paterno" required>
+            <input type="text" id="apellido-materno" v-model="nuevoTirador.apellido_materno" placeholder="Apellido Materno" required>
+            <input type="text" id="nombre" v-model="nuevoTirador.nombre" placeholder="Nombre" required>
+            <input type="text" id="uni-regimentaria" v-model="nuevoTirador.unidad_regimentaria" placeholder="Unidad Regimentaria" required>
+            <input type="text" id="uni-combate" v-model="nuevoTirador.unidad_combate" placeholder="Unidad Combate" required>
+            <input type="text" id="uni-fundamental" v-model="nuevoTirador.unidad_fundamental" placeholder="Unidad Fundamental" required>
+            <input type="text" id="tipo-arma" v-model="nuevoTirador.tipo_arma" placeholder="Modelo Arma" required>
+            <input type="text" id="modelo-arma" v-model="nuevoTirador.modelo_arma" placeholder="Modelo Arma" required>
+            <input type="text" id="serie-arma" v-model="nuevoTirador.numero_serie" placeholder="Número de Serie" required>
+            <button type="submit">Guardar</button>
+          </form>
+        </template>
+      </Modal>
     </template>
-    
  </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useStore } from 'vuex';
 import DataTable from '@/components/DataTable.vue';
 import Modal from '@/components/Modal.vue';
-import { useStore } from 'vuex';
 
+// Store
 const store = useStore();
 
 
@@ -108,7 +149,13 @@ const store = useStore();
 const modalVisible = ref(false);
 const modalType = ref ('');
 const modalTitle = ref ('');
+const tablaActual = ref('lecciones');
+
+// Selecciones actuales
 const poligonoSeleccionado = ref(null);
+const leccionActual = ref(null);
+const fraccionActual = ref(null);
+
 
 // Datos del formulario
 const nuevoPoligono = ref ({
@@ -117,6 +164,7 @@ const nuevoPoligono = ref ({
   carriles_maximos: null,
   distancia_maxima: null
 });
+
 const nuevaLeccion = ref({
   fecha_tiro: '',
   numero_orden: '',
@@ -127,11 +175,208 @@ const nuevaLeccion = ref({
   distancia: null
 });
 
-// Estado de tablas
+// Array para almacenar todos los usuarios
+const nuevoTirador = ref({
+  rut: '',
+  correo: '',
+  grado: '',
+  apellido_paterno: '',
+  apellido_materno: '',
+  nombre: '',
+  unidad_regimentaria: '',
+  unidad_combate: '',
+  unidad_fundamental: '',
+  tipo_arma: '',
+  modelo_arma: '',
+  numero_serie: '',
+  rol: 'tirador',
+  tiros_acertados: 0,
+  total_tiros: 0,
+  numero_carril: 1
+});
+
+// Carril inicial para la fraccion actual
+const carrilActual = ref(1);
 const poligonos = computed(() => store.state.poligonos);
 const lecciones = computed(() => store.state.lecciones);
 const fracciones = computed(() => store.state.fracciones);
 const tiradores = computed(() => store.state.tiradores);
+const poligonoActual = computed(() => {
+  return poligonos.value.find((poligono) => poligono.id_poligono === poligonoSeleccionado.value);
+});
+const maxCarriles = computed(() => {
+  return poligonoActual.value ? poligonoActual.value.carriles_maximos : 0;
+});
+
+//Lista de usuarios sugeridos
+const usuarios = ref([]);
+const sugerencias = ref([]);
+const mostrarSugerencias = ref(false);
+
+// Armas
+const armas = ref([]);
+
+// Cargar las armas de la BD
+const cargarArmas = async () => {
+  try {
+    await store.dispatch('fetchArmas');
+    armas.value = store.state.armas;
+  } catch (error) {
+    console.error('Error al cargar las armas:', error);
+  }
+}
+
+//Cargar todos los usuarios y sugerir
+const cargarUsuarios = async () => {
+  try {
+    await store.dispatch('fetchUsuarios');
+    usuarios.value = store.state.usuarios;
+  } catch (error) {
+    console.error('Error al cargar los usuarios:', error);
+  }
+};
+
+// Función para buscar sugerencias
+const buscarSugerencias = () => {
+  const inputRut = nuevoTirador.value.rut.toLowerCase();
+  sugerencias.value = usuarios.value.filter((usuario) =>
+  usuario.rut.toLowerCase().startsWith(inputRut)
+  );
+  mostrarSugerencias.value = !!sugerencias.value.length;
+};
+
+// Al seleccionar usuario de la lista de sugerencias
+const seleccionarUsuario = (usuario) => {
+  // Rellena los campos edl formulario tirador
+  nuevoTirador.value.rut = usuario.rut;
+  nuevoTirador.value.correo = usuario.correo;
+  nuevoTirador.value.grado = usuario.grado;
+  nuevoTirador.value.apellido_paterno = usuario.apellido_paterno;
+  nuevoTirador.value.apellido_materno = usuario.apellido_materno;
+  nuevoTirador.value.nombre = usuario.nombre;
+  nuevoTirador.value.unidad_regimentaria = usuario.unidad_regimentaria;
+  nuevoTirador.value.unidad_combate = usuario.unidad_combate;
+  nuevoTirador.value.unidad_fundamental = usuario.unidad_fundamental;
+
+  mostrarSugerencias.value = false;
+};
+
+// Guardar tirador (separando usuario/arma/resultado)
+const guardarTirador = async () => {
+  try {
+    if (!fraccionActual.value) {
+      throw new Error('No hay fracción seleccionada.');
+    }
+    console.log('Carril actual:', carrilActual.value, 'Máximo carriles:', maxCarriles.value);
+    //VERIFICAR CARRILES DISPONIBLES
+    if (carrilActual.value > maxCarriles.value) {
+      alert('No hay carriles disponibles');
+      return;
+    }
+
+    // Verifica si el tirador/usuario ya existe en la fraccion
+    const existeTiradorEnFraccion = tiradores.value.some(
+      (t) => t.rut === nuevoTirador.value.rut
+    );
+    if (existeTiradorEnFraccion) {
+      alert('El tirador ya existe en la fracción actual');
+      return;
+    }
+
+    // Verificar si el arma existe
+    const existeMismaArma = tiradores.value.some(
+      (t) => t.serieArma === nuevoTirador.value.numero_serie 
+    );
+    if (existeMismaArma) {
+      alert('El arma ya está asignada a otro tirador');
+      return;
+    }
+
+    // Datos del usuario
+    const usuarioData = {
+      rut: nuevoTirador.value.rut,
+      correo: nuevoTirador.value.correo,
+      grado: nuevoTirador.value.grado,
+      apellido_paterno: nuevoTirador.value.apellido_paterno,
+      apellido_materno: nuevoTirador.value.apellido_materno,
+      nombre: nuevoTirador.value.nombre,
+      unidad_regimentaria: nuevoTirador.value.unidad_regimentaria,
+      unidad_combate: nuevoTirador.value.unidad_combate,
+      unidad_fundamental: nuevoTirador.value.unidad_fundamental,
+      rol: 'tirador',
+    };
+    console.log('Datos del usuario:', usuarioData);
+
+    // Verifica si el usuario existe
+    const usuarioExistente = usuarios.value.find(
+      (u) => u.rut === nuevoTirador.value.rut
+    );
+
+    let usuarioId;
+    if (usuarioExistente) {
+      usuarioId = usuarioExistente.id_usuario;
+    } else {
+      // Si no existe, crea un nuevo usuario
+      const usuarioResponse = await store.dispatch('crearUsuario', usuarioData);
+      usuarioId = usuarioResponse.data.id_usuario;
+    }
+    console.log('ID del usuario:', usuarioId);
+
+    // Preparta los datos del arma
+    const armaData = {
+      tipo_arma: nuevoTirador.value.tipo_arma,
+      modelo_arma: nuevoTirador.value.modelo_arma,
+      numero_serie: nuevoTirador.value.numero_serie,
+    };
+    console.log('Datos del arma:', armaData);
+
+    //const armaResponse = await store.dispatch('crearArma', armaData);
+    //let armaId = armaResponse.data.id_arma;
+
+    // Verificar si el arma existe
+    const armaExistente = armas.value.find(
+      (a) => a.numero_serie === nuevoTirador.value.numero_serie
+    );
+
+    let armaId;
+    if (armaExistente) {
+      armaId = armaExistente.id_arma;
+    } else {
+      // Si no existe, crea una nueva arma
+      const armaResponse = await store.dispatch('crearArma', armaData);
+      armaId = armaResponse.data.id_arma;
+    }
+    console.log('ID del arma:', armaId);
+
+    // Prepara datos de resultado
+    const resultadoData = {
+      id_usuario: usuarioId,
+      id_arma: armaId,
+      id_fraccion: fraccionActual.value.id_fraccion,
+      tiros_acertados: nuevoTirador.value.tiros_acertados,
+      total_tiros: nuevoTirador.value.total_tiros,
+      numero_carril: carrilActual.value,
+    };
+    console.log('Datos del resultado:', resultadoData);
+
+    await store.dispatch('crearResultado', resultadoData);
+    console.log('Tirador guardado con éxito');
+    cargarUsuarios();
+    cargarArmas();
+
+    // Incrementar el carril actual
+    carrilActual.value += 1;
+
+    // Actualizar la lista de tiradores
+    await store.dispatch('fetchTiradores', fraccionActual.value.id_fraccion);
+    //cerrarModal();
+  } catch (error) {
+    console.error('Error al guardar tirador:', error);
+  }
+
+};
+
+
 
 // Configuración de columnas para tabla
 const columnasLecciones = ref( [
@@ -161,18 +406,43 @@ const columnasTiradores = [
 ];
 
 
-
+// Modal y navegacion de tablas
 const abrirModal = (tipo) => {
   modalType.value = tipo;
-  modalTitle.value = tipo == 'leccion' ? 'Agregar Nueva Lección' : 'Agregar Nuevo Polígono';
-  modalVisible.value = true;
+  modalTitle.value = tipo;
+  //modalVisible.value = true;
+  if (tipo === 'poligono') {
+    modalTitle.value = 'Agregar Nuevo Polígono';
+    modalVisible.value = true;
+  } else if (tipo === 'leccion') {
+    modalTitle.value = 'Agregar Nueva Lección';
+    modalVisible.value = true;
+  } else if (tipo === 'tiradores') {
+    if (carrilActual.value > maxCarriles.value) {
+      alert('No hay carriles disponibles');
+    }else {
+      cargarUsuarios();
+      cargarArmas();
+      modalTitle.value = 'Agregar Nuevo Tirador';
+      modalVisible.value = true;
+    };
+  };
+  console.log('Modal abierto:', modalVisible.value, modalType.value);
 }
 
 const cerrarModal = () => {
   modalVisible.value = false;
 }
+const volverALecciones = () => {
+  tablaActual.value = 'lecciones';
+};
+const volverAFracciones = () => {
+  tablaActual.value = 'fracciones';
+};
 
-// Crear nuevo polígono
+// ---------------------------------------------------------
+// CRUD Polígonos / Lecciones / Fracciones
+// ---------------------------------------------------------
 const crearPoligono = async () => {
   await store.dispatch('crearPoligono', nuevoPoligono.value);
   cerrarModal();
@@ -198,60 +468,81 @@ const crearLeccion = async () => {
   }
 };
 
-
-const tablaActual =ref('lecciones');
-
-const volverALecciones = () => {
-  tablaActual.value = 'lecciones';
+const crearFraccion = async () => {
+  if (!leccionActual.value) {
+    console.error('No hay lección seleccionada');
+    return;
+  }
+  //const fraccionNumero = fracciones.value.length + 1;
+  const nuevaFraccion = {
+    id_leccion: parseInt(leccionActual.value.id_leccion, 10),
+    numero_fraccion: fracciones.value.length + 1,
+    tiradores_totales: 0
+  };
+  try {
+    await store.dispatch('crearFraccion', nuevaFraccion);
+    console.log('Fracción creada:', nuevaFraccion);
+    await store.dispatch('fetchFracciones',leccionActual.value.id_leccion);
+  } catch (error) {
+    console.error('Error al crear la fracción:', error);
+  }
 };
-const volverAFracciones = () => {
-  tablaActual.value = 'fracciones';
+
+// ---------------------------------------------------------
+// Carga de datos al hacer clic en una fila
+// ---------------------------------------------------------
+const cargarLecciones = async () => {
+  if (poligonoSeleccionado.value) {
+    await store.dispatch('fetchLecciones', poligonoSeleccionado.value);
+  }
 };
+const cargarFracciones = async (leccion) => {
+  leccionActual.value = leccion; // Guarda leccion actual
+  try {
+    await store.dispatch('fetchFracciones', leccion.id_leccion);
+    tablaActual.value = 'fracciones';
+  } catch (error) {
+    console.error('Error al cargar las fracciones:', error);
+  }
+};
+const cargarTiradores = (fraccion) => {
+  console.log('Poligono seleccionado:', poligonoSeleccionado.value);
+  fraccionActual.value = fraccion; // Asigna la fraccion actual
+  store.dispatch('fetchTiradores', fraccion.id_fraccion);
+  tablaActual.value = 'tiradores';
+  inicializarCarril(fraccionActual.value);
+};
+
+// ---------------------------------------------------------
+// Calcula carriles asignados a una fraccion
+// ---------------------------------------------------------
+const inicializarCarril = async () => {
+  if(fraccionActual.value ) {
+    try {
+      // Carga tiradores para fraccion actual
+      const tiradoresEnFraccion = await store.dispatch('fetchTiradores', fraccionActual.value.id_fraccion);
+      console.log('Tiradores en la fraccion:', tiradoresEnFraccion);
+
+      // Encuentra el numero mayor de carril ocupado
+      const ultimoCarril = tiradoresEnFraccion.reduce((max, tirador) => {
+        return tirador.numero_carril > max ? tirador.numero_carril : max;
+      }, 0);
+
+      // Establece el siguiente carril disponible
+      carrilActual.value = ultimoCarril + 1;
+      console.log('Carril inicializado:', carrilActual.value);
+
+    } catch (error) {
+      console.error('Error al cargar los carriles:', error);
+    }
+  }
+};
+
 
 // Cargar polígonos y lecciones al montar
 onMounted(() => {
   store.dispatch('fetchPoligonos');
-  //cargarLecciones();   // Cargar las lecciones
 });
-
-// Función para cargar las lecciones basadas en el polígono seleccionado
-const cargarLecciones = async () => {
-  if (poligonoSeleccionado.value) {
-    const lecciones = await store.dispatch('fetchLecciones', poligonoSeleccionado.value);
-    //await store.dispatch('fetchLecciones', poligonoSeleccionado.value);
-/*     if (!Array.isArray(lecciones)) {
-      console.error('Las lecciones no son un array:', lecciones);
-      return;
-    } */
-  }
-
-};
-
-// Cargar fracciones al hacer clic en una lección
-const cargarFracciones = (leccion) => {
-  store.dispatch('fetchFracciones', leccion.id_leccion);
-  tablaActual.value = 'fracciones';
-}
-
-// Cargar tiradores al hacer clic en una fracción
-const cargarTiradores = (fraccion) => {
-  store.dispatch('fetchTiradores', fraccion.id_fraccion);
-  tablaActual.value = 'tiradores';
-};
-
-// Cargar polígonos
-const poligonoActual = computed(() => {
-  return poligonos.value.find(poligono => poligono.id_poligono === poligonoSeleccionado.value);
-
-});
-
-// Mostrar la tabla de fracciones y ocultar la de lecciones
-/* const mostrarFracciones = async (leccion) => {
-  console.log('Lección Seleccionada:', leccion.id_leccion);
-  tablaActual.value = true;  // Mostrar la tabla de fracciones
-  await cargarFracciones(leccion);
-}; */
-
 
 </script>
 

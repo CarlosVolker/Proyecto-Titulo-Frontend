@@ -1,6 +1,6 @@
 <template>
   <div>
-    <button @click="editarTerminar" :disabled="rowsArray.length === 0">
+    <button v-if="showEditButton" @click="editarTerminar" :disabled="rowsArray.length === 0">
       {{ isEditMode ? 'Terminar' : 'Editar' }}
     </button>
     <table>
@@ -43,6 +43,7 @@
 import { ref, computed, defineProps, defineEmits } from 'vue';
 import axios from '@/axios';
 
+
 // Recibir las propiedades del componente
 const props = defineProps({
   columns: {
@@ -56,6 +57,10 @@ const props = defineProps({
   rowKey: {
     type: String,
     default: 'id' // Definir valor predeterminado para rowKey
+  },
+  showEditButton: {
+    type: Boolean,
+    default: true
   }
 });
 
@@ -145,14 +150,16 @@ const saveEdit = async (row, columnKey, accion) => {
   } 
 };
 
-const cancelEdit = (row, columnKey) => {
-  delete isEditing.value[`${row[rowKey]}${columnKey}`];  // Devolver la celda a no editable
+const cancelEdit = () => {
+  Object.keys(isEditing.value).forEach(key => {
+    delete isEditing.value[key];
+  });
+  isEditMode.value = false;
 }
 
 
 
 </script>
-
 
 
 <style scoped>

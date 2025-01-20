@@ -9,23 +9,31 @@ const store = createStore({
     lecciones: [],
     fracciones: [],
     tiradores: [],
+    usuarios: [],
   },
   mutations: {
     setUserType(state, userType) {
       state.userType = userType;
       localStorage.setItem('userType', userType);
     },
+    // Mutacion que maneja un solo usuario (usuario actual)
     setUser(state, user) {
       state.user = user;
     },
     setToken(state, token) {
       state.isAuthenticated = true;
       localStorage.setItem('accessToken', token);
-
     },
     setId(state, id_usuario) {
       localStorage.setItem('id_usuario', id_usuario);
-
+    },
+    // Mutacion para un listado de usuarios (setUser y setUsuarios se pueden combinar)
+    // pero preferí manejarlos por separado para tener más control
+    setUsuarios(state, usuarios) {
+      state.usuarios = usuarios;
+    },
+    setArmas(state, armas) {
+      state.armas = armas;
     },
     logout(state) {
       state.userType = '';
@@ -48,6 +56,7 @@ const store = createStore({
     },
   },
   actions: {
+    // Autenticacion/manejo de usuario actual
     async fetchUser({ commit }) {
       try {
         const token = localStorage.getItem('accessToken');
@@ -56,9 +65,7 @@ const store = createStore({
           throw new Error('No se encontró el token de acceso');
         }
         const response = await axios.get(`usuarios/${localStorage.getItem('id_usuario')}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: {Authorization: `Bearer ${token}`},
         });
         console.log('Información del perfil: ', response.data);
         commit('setUser', response.data);
@@ -71,7 +78,11 @@ const store = createStore({
       commit('setId', id_usuario);
       commit('setUserType', userType);
     },
+    logout({ commit }) {
+      commit('logout');
+    },
 
+    // Polígonos, Lecciones, Fracciones y Tiradores
     async fetchPoligonos({ commit }) {
       try {
         const response = await axios.get('poligonos/');
@@ -90,16 +101,15 @@ const store = createStore({
         console.error('Error al obtener las lecciones', error);
       }
     },
-
-    async fetchFracciones({ commit }, leccionId) {
+    async fetchFracciones({ commit }, idLeccion) {
       try {
-        const response = await axios.get(`lecciones/${leccionId}/fracciones`);
+        const response = await axios.get(`lecciones/${idLeccion}/fracciones`);
+        console.log('Fracciones: ', response.data);
         commit('setFracciones', response.data);
       } catch (error) {
         console.error('Error al obtener las fracciones', error);
       }
     },
-
     async fetchTiradores({ commit }, fraccionId) {
       try {
         const response = await axios.get(`fracciones/${fraccionId}/resultados`);
@@ -118,37 +128,88 @@ const store = createStore({
           resultado_id: item.resultado.id_resultado
         }));
         commit('setTiradores', tiradores);
+        return tiradores;
       } catch (error) {
         console.error('Error cargando tiradores', error);
       }
     },
-
     async crearPoligono({ commit }, poligono) {
       try {
         await axios.post('poligonos/', poligono);
-        //commit('agregarPoligono', poligono);
       } catch (error) {
         console.error('Error al crear el poligono', error);
       }
     },
-
+    // Crear una leccion
     async crearLeccion({ commit }, leccionData) {
       try {
         const response = await axios.post(`lecciones/`, leccionData);
         commit('setLecciones', response.data);
         console.log('Leccion creada: ', response.data);
-
       } catch (error) {
         console.error('Error al crear la leccion', error);
       }
-
+    },
+    // Crear una fraccion
+    async crearFraccion({ }, fraccionData) {
+      try {
+        console.log('Fracción a crear: ', fraccionData);
+        const response = await axios.post(`fracciones/`, fraccionData);
+        console.log('Fracción creada: ', response.data);
+      } catch (error) {
+        console.error('Error al crear la fracción', error);
+      }
     },
 
-    logout({ commit }) {
-      commit('logout');
-    }
-  }
+    //Módulo de usuarios, armas y resultados
 
+    // Obtener todos los usuarios de la BD
+    async fetchUsuarios({ commit }) {
+      try {
+        const response = await axios.get('usuarios/');
+        commit('setUsuarios', response.data);
+      } catch (error) {
+        console.error('Error al obtener los usuarios', error);
+      }
+    },
+    // Obtener todas las armas de la BD
+    async fetchArmas({ commit }) {
+      try {
+        const response = await axios.get('armas/');
+        commit('setArmas', response.data);
+      } catch (error) {
+        console.error('Error al obtener las armas', error);
+      }
+    },
+    async crearUsuario({ commit }, usuarioData) {
+      try {
+        console.log('Datos enviados para crear usuario (store): ', usuarioData);
+        const response = await axios.post('usuarios/', usuarioData);
+        return response;
+      } catch (error) {
+        console.error('Error al crear el usuario', error);
+        throw error;
+      }
+    },
+    async crearArma({ commit }, armaData) {
+      try {
+        const response = await axios.post('armas/', armaData);
+        return response;
+      } catch (error) {
+        console.error('Error al crear el arma', error);
+        throw error;
+      }
+    },
+    async crearResultado({ commit }, resultadoData) {
+      try {
+        const response = await axios.post('resultados/', resultadoData);
+        return response;
+      }catch (error) {
+        console.error('Error al crear el resultado', error);
+        throw error;
+      }
+    },
+  },
 });
 
 export default store;
