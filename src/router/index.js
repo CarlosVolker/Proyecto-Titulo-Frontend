@@ -9,6 +9,7 @@ import CrearLeccion from '@/views/ingresoAdmin/CrearLeccion.vue';
 import Perfil from '@/views/genericas/Perfil.vue';
 import Configuracion from '@/views/genericas/Configuracion.vue';
 import Buscar from '@/views/ingresoAdmin/Buscar.vue';
+import UsuariosListar from '@/views/ingresoAdmin/UsuariosListar.vue';
 
 const routes = [
   { path: '/', redirect: '/login' }, // Redirige la ruta raiz a login
@@ -30,6 +31,11 @@ const routes = [
       {
         path: '/:userType/buscar',
         component: Buscar
+      },
+      {
+        path: '/:userType/usuarios-listar',
+        component: UsuariosListar
+
       },
     ]
   },

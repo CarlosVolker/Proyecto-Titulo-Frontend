@@ -44,6 +44,7 @@ const handleLogin = async () => {
       password: contrasena.value,
     });
 
+
     if (response && response.data) {
       store.dispatch('login', {
         token: response.data.token,
@@ -132,7 +133,7 @@ html, body {
 }
 
 .main-title {
-  font-size: 4rem;
+  font-size: 2rem;
   color: var(--text-color);
   font-weight: bold;
   text-align: center;

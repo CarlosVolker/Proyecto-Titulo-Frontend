@@ -2,14 +2,12 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import router from './router';
 import store from './store';
-import axios from './axios'; // Importa la instancia de Axios configurada
-import PrimeVue from 'primevue/config';
+import axios from './axios';
 
-//import $ from 'jquery';
 
-// Configura Axios para incluir el token de autenticación en las solicitudes
+// Axios para incluir el token de autenticación en las solicitudes
 axios.interceptors.request.use(config => {
-  const token = localStorage.getItem('accessToken');
+  const token = localStorage.getItem('Authorization');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

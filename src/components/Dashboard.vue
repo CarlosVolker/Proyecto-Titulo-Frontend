@@ -83,6 +83,8 @@ const navigate = (menuItem) => {
     router.push(`${basePath}/crear-leccion`);
   } else if (menuItem === 'BUSCAR') {
     router.push(`${basePath}/buscar`);
+  } else if (menuItem === 'USUARIOS') {
+    router.push(`${basePath}/usuarios-listar`);
   } else if (menuItem === 'PERFIL') {
     router.push(`${basePath}/perfil`);
   } else if (menuItem === 'CONFIGURACIÓN') {
