@@ -3,6 +3,7 @@
         <h1>USUARIOS</h1>
         <p>Esta es la página de Usuarios.</p>
         <div>
+          <button type="button" @click="crearUsuarioModal" class="save-button">Crear Usuario</button>
             <Modal
             :visible="modalVisible"
             :title="modalTitle"
@@ -18,7 +19,7 @@
                 <div class="form-grid">
                   <div class="form-group">
                     <label class="label-modal">RUT</label>
-                    <input type="text" id="rut" v-model="usuarioSeleccionado.rut" placeholder="RUT" :disabled="!editable" />
+                    <input type="text" id="rut" v-model="usuarioSeleccionado.rut" placeholder="RUT" :disabled="!editable" required />
                   </div>
 
                   <div class="form-group">
@@ -147,7 +148,6 @@ import Modal from '@/components/Modal.vue';
 
 const store = useStore();
 
-// Controlador de si los campos del modal son o no editables
 
 //Configuiración Formulario para Modal
 const modalVisible = ref(false);
@@ -187,6 +187,26 @@ const cargarUsuarios = async () => {
         }
     });
 };
+
+const crearUsuarioModal = (row)=> {
+  modalTitle.value = 'Crear Usuario';
+  usuarioSeleccionado.value = {
+    rut: '',
+    grado: '',
+    apellido_paterno: '',
+    apellido_materno: '',
+    nombre: '',
+    correo: '',
+    rol: '',
+    unidad_regimentaria: '',
+    unidad_combate: '',
+    unidad_fundamental: '',
+    habilitado: 'true'
+  };
+  editable.value = true;
+  modalVisible.value = true;
+
+}
 
 const editarUsuariosModal = (row) => {
   modalTitle.value = 'Editar Usuario';
@@ -229,10 +249,19 @@ const guardarPassword = () => {
   cerrarModalPassword();
 }
 
-const guardarCambios = () => {
-    // Aquí puedes agregar la lógica para guardar los cambios
-    console.log('Guardar cambios para', usuarioSeleccionado.value);
+const guardarCambios = async () => {
+  try {
+    
+    await store.dispatch('updateUser', {
+      idUsuario: usuarioSeleccionado.value.id_usuario, //ID del usuario seleccionado en la tabla
+      updateData: usuarioSeleccionado.value //Datos del usuario,
+    });
+    console.log('Usuario de la tabla actualizado', usuarioSeleccionado.value);
+    cargarUsuarios();
     cerrarModal();
+  }catch (error) {
+    alert('Error al guardar cambios');
+  }
 };
 </script>
 

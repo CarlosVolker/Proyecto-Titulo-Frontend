@@ -7,7 +7,7 @@ import axios from './axios';
 
 // Axios para incluir el token de autenticación en las solicitudes
 axios.interceptors.request.use(config => {
-  const token = localStorage.getItem('accessToken');
+  const token = localStorage.getItem('Authorization');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

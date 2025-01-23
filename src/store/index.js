@@ -60,12 +60,13 @@ const store = createStore({
     async fetchUser({ commit }) {
       try {
         const token = localStorage.getItem('accessToken');
+        
         console.log('Token de acceso: ', token);
         if (!token) {
           throw new Error('No se encontró el token de acceso');
         }
         const response = await axios.get(`usuarios/${localStorage.getItem('id_usuario')}`, {
-          headers: {Authorization: `Bearer ${token}`},
+          headers: {Authorization: `Token ${token}`},
         });
         console.log('Información del perfil: ', response.data);
         commit('setUser', response.data);
@@ -206,6 +207,48 @@ const store = createStore({
         return response;
       }catch (error) {
         console.error('Error al crear el resultado', error);
+        throw error;
+      }
+    },
+    // Actualizar datos de usuario
+    async updateUser({ commit }, {idUsuario = null, updateData}) {
+      try {
+        // Si no recibe el id del usuario, se toma el id del usuario actual
+        const userId = idUsuario || localStorage.getItem('id_usuario');
+
+        if (!userId) {
+          throw new Error('No se encontró el id del usuario');
+        }
+
+        const response = await axios.patch(`usuarios/${userId}/`, updateData);
+        console.log('Usuario actualizado(vuex): ', response.data);
+
+        // Si se actualiza el usuario actual, se actualiza el state
+        if (idUsuario === null || userId === localStorage.getItem('id_usuario')) {
+        commit('setUser', response.data);
+        }
+        return response.data;
+      }catch (error) {
+        console.error('Error al actualizar el usuario(vuex)', error);
+        throw error;
+      }
+    },
+    // Cambiar contraseña
+    async cambiarContrasena({ state }, {old_password, new_password}) {
+      try {
+        //const token = localStorage.getItem('accessToken');
+        const idUsuario = localStorage.getItem('id_usuario');
+        console.log('Datos de cambio', idUsuario, old_password, new_password);
+        const response = await axios.post(
+          `usuarios/${idUsuario}/cambiar-contrasena/`,
+          { old_password, new_password }, 
+
+        );
+         console.log('Contraseña cambiada: ', response.data);
+         return response.data;
+
+      } catch (error) {
+        console.error('Error al cambiar la contraseña', error.response.data);
         throw error;
       }
     },
