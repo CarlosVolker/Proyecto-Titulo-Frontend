@@ -252,6 +252,15 @@ const store = createStore({
         throw error;
       }
     },
+    async eliminarUsuario({ commit }, idUsuario) {
+      try {
+        const response = await axios.delete(`usuarios/${idUsuario}/`);
+        return response;
+      } catch (error) {
+        console.error('Error al eliminar el usuario', error);
+        throw error;
+      }
+    }
   },
 });
 

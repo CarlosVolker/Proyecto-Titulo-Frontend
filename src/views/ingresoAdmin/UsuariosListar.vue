@@ -92,6 +92,7 @@
 
                 <div class="form-footer">
                   <button type="submit" class="save-button">Guardar</button>
+                  <button type="button" @click="eliminarUsuario" class="save-button">Eliminar</button>
                 </div>
               </form>
             </template>
@@ -134,7 +135,6 @@
         @row-click="editarUsuariosModal"
         />
         
-
       </div>
     </div>
 
@@ -174,13 +174,19 @@ const columnasUsuarios =ref ([
 
 onMounted(() => {
     cargarUsuarios();
-    console.log(usuarios.value);
 });
 
 const cargarUsuarios = async () => {
     await store.dispatch('fetchUsuarios');
+    const idUsuarioActual = localStorage.getItem('id_usuario');
     console.log('datos: ',store.state.usuarios);
-    usuarios.value = store.state.usuarios. map(usuario => {
+    usuarios.value = store.state.usuarios
+    .filter(usuario => {
+      // Filtramos el usuario actual para que no aparezca en la tabla
+      console.log('Comparando usuario:', usuario.id_usuario, 'Usuario actual', idUsuarioActual);
+      return usuario.id_usuario.toString() !== idUsuarioActual.toString();
+    })
+    .map(usuario => {
         return {
             ...usuario,
             habilitado: usuario.habilitado ? 'true' : 'false'
@@ -263,6 +269,18 @@ const guardarCambios = async () => {
     alert('Error al guardar cambios');
   }
 };
+
+const eliminarUsuario = async () => {
+  try {
+    console.log('Usuario seleccionado:', usuarioSeleccionado.value);
+    await store.dispatch('eliminarUsuario', usuarioSeleccionado.value.id_usuario);
+    console.log('Usuario eliminado correctamente');
+    cargarUsuarios();
+    cerrarModal();
+  } catch (error) {
+    alert('Error al eliminar usuario');
+  }
+}
 </script>
 
 <style scoped>
