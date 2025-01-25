@@ -53,8 +53,8 @@ const menuItemsSuperior = computed(() => {
     case 'limitado':
       return [
         { text: 'INICIO', active: true },
-        { text: 'CREAR LECCIÓN' },
-        { text: 'BUSCAR' }
+        //{ text: 'CREAR LECCIÓN' },
+        { text: 'ARMAS' }
       ];
     case 'tirador':
       return [
@@ -83,6 +83,8 @@ const navigate = (menuItem) => {
     router.push(`${basePath}/crear-leccion`);
   } else if (menuItem === 'BUSCAR') {
     router.push(`${basePath}/buscar`);
+  } else if (menuItem === 'ARMAS') {
+    router.push(`${basePath}/armas-unidades`);
   } else if (menuItem === 'USUARIOS') {
     router.push(`${basePath}/usuarios-listar`);
   } else if (menuItem === 'PERFIL') {

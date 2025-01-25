@@ -10,6 +10,7 @@ import Perfil from '@/views/genericas/Perfil.vue';
 import Configuracion from '@/views/genericas/Configuracion.vue';
 import Buscar from '@/views/ingresoAdmin/Buscar.vue';
 import UsuariosListar from '@/views/ingresoAdmin/UsuariosListar.vue';
+import ArmasUnidades from '@/views/ingresoLimitado/ArmasUnidades.vue';
 
 const routes = [
   { path: '/', redirect: '/login' }, // Redirige la ruta raiz a login
@@ -47,6 +48,10 @@ const routes = [
       {
         path: '',
         component: InicioLimitado
+      },
+      {
+        path: '/:userType/armas-unidades',
+        component: ArmasUnidades
       }
     ]
   },
