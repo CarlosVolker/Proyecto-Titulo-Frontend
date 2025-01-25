@@ -2,6 +2,15 @@
     <div>
         <h1>USUARIOS</h1>
         <p>Esta es la página de Usuarios.</p>
+
+        <!-- Input de busqueda-->
+        <input 
+        type="text" 
+        v-model="busquedaEnLista" 
+        placeholder="Buscar en la lista"
+        class="input-busqueda" 
+        />
+
         <div>
           <button type="button" @click="crearUsuarioModal" class="save-button">Crear Usuario</button>
             <Modal
@@ -77,7 +86,6 @@
                     <option :value="true">Sí</option>
                     <option :value="false">No</option>
                     </select>
-                    <!--<input type="text" id="habilitado" v-model="usuarioSeleccionado.habilitado" placeholder="Habilitado" :disabled="!editable" />-->
                   </div>
                   <div class="form-group" v-if="usuarioSeleccionado.habilitado">
                     <button 
@@ -97,7 +105,6 @@
               </form>
             </template>
             </Modal>
-
             <!--Modal Cambio o creacion de contraseña -->
             <Modal :visible="modalPasswordVisible" :title="'Contraseña'" @close="cerrarModalPassword">
               <form @submit.prevent="guardarPassword" class="form-modal">
@@ -125,11 +132,11 @@
               </form>
             </Modal>
 
-
-        <DataTable 
-        v-if="usuarios.length > 0"
+            <!-- v-if="usuarios.length > 0" -->
+        <DataTable
+        v-if="filtrarUsuarios.length > 0"
         :columns="columnasUsuarios" 
-        :rows="usuarios" 
+        :rows="filtrarUsuarios" 
         rowKey="id_usuarios"
         :showEditButton="false"
         @row-click="editarUsuariosModal"
@@ -157,8 +164,7 @@ const usuarios = ref([]);
 const usuarioSeleccionado = ref(null);
 const password = ref({nueva: '', confirmar: ''});//Campos del 2do modal
 const editable = ref(false);
-
-
+const busquedaEnLista = ref(''); // Input de busqueda
 
 const columnasUsuarios =ref ([
     { key: 'rut', label: 'RUT' },
@@ -179,11 +185,9 @@ onMounted(() => {
 const cargarUsuarios = async () => {
     await store.dispatch('fetchUsuarios');
     const idUsuarioActual = localStorage.getItem('id_usuario');
-    console.log('datos: ',store.state.usuarios);
     usuarios.value = store.state.usuarios
     .filter(usuario => {
       // Filtramos el usuario actual para que no aparezca en la tabla
-      console.log('Comparando usuario:', usuario.id_usuario, 'Usuario actual', idUsuarioActual);
       return usuario.id_usuario.toString() !== idUsuarioActual.toString();
     })
     .map(usuario => {
@@ -193,6 +197,24 @@ const cargarUsuarios = async () => {
         }
     });
 };
+
+const filtrarUsuarios = computed(() => {
+  const consulta = busquedaEnLista.value.toLowerCase();
+  return usuarios.value.filter(usuario => {
+    return (
+      usuario.rut.includes(consulta) ||
+      usuario.grado.toLowerCase().includes(consulta) ||
+      usuario.nombre.toLowerCase().includes(consulta) ||
+      usuario.apellido_paterno.toLowerCase().includes(consulta) ||
+      usuario.apellido_materno.toLowerCase().includes(consulta) ||
+      usuario.correo.toLowerCase().includes(consulta) ||
+      usuario.rol.toLowerCase().includes(consulta) ||
+      usuario.unidad_regimentaria.toLowerCase().includes(consulta) ||
+      usuario.unidad_combate.toLowerCase().includes(consulta) ||
+      usuario.unidad_fundamental.toLowerCase().includes(consulta)
+    );
+  });
+});
 
 const crearUsuarioModal = (row)=> {
   modalTitle.value = 'Crear Usuario';
@@ -257,11 +279,16 @@ const guardarPassword = () => {
 
 const guardarCambios = async () => {
   try {
-    
-    await store.dispatch('updateUser', {
-      idUsuario: usuarioSeleccionado.value.id_usuario, //ID del usuario seleccionado en la tabla
-      updateData: usuarioSeleccionado.value //Datos del usuario,
-    });
+    if (!usuarioSeleccionado.value.id_usuario) {
+      // Crea nuevo usuario
+      await store.dispatch('crearUsuario', usuarioSeleccionado.value);
+    } else {
+      // Actualizar un usuario existente
+      await store.dispatch('updateUser', {
+        idUsuario: usuarioSeleccionado.value.id_usuario,
+        updateData: usuarioSeleccionado.value
+      });
+    }
     console.log('Usuario de la tabla actualizado', usuarioSeleccionado.value);
     cargarUsuarios();
     cerrarModal();
