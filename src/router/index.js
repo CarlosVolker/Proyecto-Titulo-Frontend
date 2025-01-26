@@ -116,7 +116,7 @@ router.beforeEach((to, from, next) => {
     // Redirige al usuario a la página de login si no está autenticado
     next('/login' );
   } else if (requiresAuth && to.meta.role && to.meta.role !== userType) {
-    next('./login');
+    next('/login');
   } else {
     next();
   }
