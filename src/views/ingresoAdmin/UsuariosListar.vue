@@ -261,6 +261,10 @@ const actualizarEstadoHabilitado = () => {
 };
 
 const abrirModalPassword = () => {
+  if (!usuarioSeleccionado.value || !usuarioSeleccionado.value.id_usuario) {
+    alert('Selecciona un usuario váñido antes de cambiar la contraseña');
+    return;
+  }
   modalPasswordVisible.value = true;
 };
 
@@ -268,14 +272,27 @@ const cerrarModalPassword = () => {
   modalPasswordVisible.value = false;
 };
 
-const guardarPassword = () => {
+const guardarPassword = async () => {
   if (password.value.nueva !== password.value.confirmar) {
     alert('Las contraseñas no coinciden');
     return;
   }
-  console.log('Contraseña Guardada:', password.value.nueva);
-  cerrarModalPassword();
-}
+  try {
+    if (!usuarioSeleccionado.value || !usuarioSeleccionado.value.id_usuario) {
+      alert('No se ha seleccionado un usuario válido');
+      return;
+    }
+    await store.dispatch('cambiarContrasena', {
+      idUsuario: usuarioSeleccionado.value.id_usuario,
+      new_password: password.value.nueva
+    });
+    console.log('Contraseña cambiada para usuario:', usuarioSeleccionado.value.id_usuario);
+    cerrarModalPassword();
+
+  } catch (error) {
+    alert('Error al guardar contraseña');
+  }
+};
 
 const guardarCambios = async () => {
   try {

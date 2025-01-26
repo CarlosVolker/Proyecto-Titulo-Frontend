@@ -234,7 +234,7 @@ const store = createStore({
       }
     },
     // Cambiar contraseña
-    async cambiarContrasena({ state }, {old_password, new_password}) {
+/*     async cambiarContrasena({ state }, {old_password, new_password}) {
       try {
         //const token = localStorage.getItem('accessToken');
         const idUsuario = localStorage.getItem('id_usuario');
@@ -251,7 +251,31 @@ const store = createStore({
         console.error('Error al cambiar la contraseña', error.response.data);
         throw error;
       }
+    }, */
+
+    async cambiarContrasena({ state }, { idUsuario = null, old_password = null, new_password }) {
+      try {
+        // si no se especifica el idUsuario, usamos el usuario logeado
+        idUsuario = idUsuario || localStorage.getItem('id_usuario');
+
+        // si se proporciona "old_password", asumimos que es un cambio para el usuario logeado
+        const data = old_password
+        ? { old_password, new_password } // Cambiar contraseña del usuario logeado
+        : { new_password }; // Cambiar contraseña de otro usuario
+
+        console.log('Datos de cambio', idUsuario, data);
+
+        const response = await axios.post(`usuarios/${idUsuario}/cambiar-contrasena/`, data);
+
+        console.log('Contraseña cambiada: ', response.data);
+        return response.data;
+
+      } catch (error) {
+        console.error('Error al cambiar la contraseña', error);
+        throw error;
+      }
     },
+
     async eliminarUsuario({ commit }, idUsuario) {
       try {
         const response = await axios.delete(`usuarios/${idUsuario}/`);
