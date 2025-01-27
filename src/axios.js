@@ -2,6 +2,7 @@ import axios from "axios";
 
 const axiosInstance = axios.create({
   baseURL: "https://proyecto-titulo-backend.onrender.com/api/", // URL base según tu backend
+  //baseURL: "http://localhost:8000/api/", // URL base según tu backend
 });
 
 axiosInstance.interceptors.request.use(

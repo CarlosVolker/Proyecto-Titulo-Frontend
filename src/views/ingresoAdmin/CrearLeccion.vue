@@ -60,14 +60,34 @@
 
       <div>
         <h2>Lecciones de Tiro</h2>
-        <button @click="abrirModal('leccion')">Agregar Lección</button>
+        <div class="actions-container">
+          <button @click="abrirModal('leccion')">Agregar Lección</button>
+          <input 
+            type="text" 
+            v-model="searchQuery" 
+            placeholder="Buscar lecciones..." 
+            class="search-input"
+            @input="buscarConDebounce($event.target.value)"
+          />
+        </div>
 
-        <DataTable 
-        :columns="columnasLecciones" 
-        :rows="lecciones" 
-        rowKey="id_leccion"
-        @row-click="cargarFracciones"
-        />
+        <div class="table-container">
+          <div v-if="cargando" class="loading-overlay">
+            <div class="spinner"></div>
+          </div>
+          
+          <DataTable 
+            :columns="columnasLecciones" 
+            :rows="lecciones" 
+            rowKey="id_leccion"
+            @row-click="cargarFracciones"
+            @scroll="manejarScroll"
+          />
+
+          <div v-if="!cargando && lecciones.length === 0" class="no-data">
+            No se encontraron lecciones
+          </div>
+        </div>
       </div>
     </template>
 
@@ -140,10 +160,24 @@ import { ref, onMounted, computed } from 'vue';
 import { useStore } from 'vuex';
 import DataTable from '@/components/DataTable.vue';
 import Modal from '@/components/Modal.vue';
+import { debounce } from 'lodash';
 
 // Store
 const store = useStore();
 
+// Variables para búsqueda
+const searchQuery = ref('');
+
+// Variables para paginación y carga
+const paginaActual = ref(1);
+const elementosPorPagina = ref(10);
+const totalElementos = ref(0);
+const cargando = ref(false);
+const todosLosDatosCargados = ref(false);
+
+// Cache para datos
+const cacheDatos = ref(new Map());
+const tiempoCache = 5 * 60 * 1000; // 5 minutos
 
 //Configuración formulario para Modal
 const modalVisible = ref(false);
@@ -198,7 +232,7 @@ const nuevoTirador = ref({
 // Carril inicial para la fraccion actual
 const carrilActual = ref(1);
 const poligonos = computed(() => store.state.poligonos);
-const lecciones = computed(() => store.state.lecciones);
+const lecciones = ref([]);
 const fracciones = computed(() => store.state.fracciones);
 const tiradores = computed(() => store.state.tiradores);
 const poligonoActual = computed(() => {
@@ -394,6 +428,7 @@ const columnasFracciones = [
 
 const columnasTiradores = [
   { key: 'numero_carril', label: 'Carril', editable: true, endpoint: 'resultados' },
+  { key: 'rut', label: 'RUT', endpoint: 'usuario' },
   { key: 'grado', label: 'Grado', editable:true, endpoint: 'usuarios', type: 'option' },
   { key: 'apellido_paterno', label: 'Ap. Paterno' },
   { key: 'apellido_materno', label: 'Ap. Materno' },
@@ -493,9 +528,111 @@ const crearFraccion = async () => {
 // ---------------------------------------------------------
 const cargarLecciones = async () => {
   if (poligonoSeleccionado.value) {
-    await store.dispatch('fetchLecciones', poligonoSeleccionado.value);
+    try {
+      cargando.value = true;
+      const cacheKey = `lecciones-${poligonoSeleccionado.value}-${paginaActual.value}`;
+      
+      // Verificar caché
+      const datosCache = obtenerDatosCache(cacheKey);
+      if (datosCache) {
+        lecciones.value = datosCache;
+        cargando.value = false;
+        return;
+      }
+
+      const response = await store.dispatch('fetchLecciones', {
+        id_poligono: parseInt(poligonoSeleccionado.value),
+        pagina: paginaActual.value,
+        limite: elementosPorPagina.value
+      });
+
+      // Verificar si la respuesta existe antes de acceder a sus propiedades
+      if (response && response.data) {
+        lecciones.value = response.data;
+        totalElementos.value = response.total || 0;
+        guardarEnCache(cacheKey, response.data);
+      } else {
+        lecciones.value = [];
+        totalElementos.value = 0;
+      }
+    } catch (error) {
+      console.error('Error al cargar lecciones:', error);
+      lecciones.value = [];
+      totalElementos.value = 0;
+    } finally {
+      cargando.value = false;
+    }
   }
 };
+
+// Función para cargar más datos (scroll infinito)
+const cargarMasDatos = async () => {
+  if (!cargando.value && !todosLosDatosCargados.value) {
+    try {
+      cargando.value = true;
+      const response = await store.dispatch('fetchLecciones', {
+        id_poligono: poligonoSeleccionado.value,
+        pagina: paginaActual.value + 1,
+        limite: elementosPorPagina.value
+      });
+
+      if (response.data && response.data.length > 0) {
+        lecciones.value = [...lecciones.value, ...response.data];
+        paginaActual.value++;
+      } else {
+        todosLosDatosCargados.value = true;
+      }
+    } catch (error) {
+      console.error('Error al cargar más datos:', error);
+    } finally {
+      cargando.value = false;
+    }
+  }
+};
+
+// Función debounce para búsqueda
+const buscarConDebounce = debounce((query) => {
+  realizarBusqueda(query);
+}, 300);
+
+const realizarBusqueda = async (query) => {
+  if (!query) {
+    await cargarLecciones();
+    return;
+  }
+
+  try {
+    cargando.value = true;
+    // Obtener todas las lecciones primero
+    const response = await store.dispatch('fetchLecciones', {
+      id_poligono: poligonoSeleccionado.value,
+      pagina: 1,
+      limite: 100 // Un número grande para obtener todas las lecciones
+    });
+    
+    if (response && response.data) {
+      // Filtrar las lecciones localmente
+      const leccionesFiltradas = response.data.filter(leccion => {
+        const searchStr = query.toLowerCase();
+        return (
+          (leccion.fecha_tiro && leccion.fecha_tiro.toLowerCase().includes(searchStr)) ||
+          (leccion.tipo_tiro && leccion.tipo_tiro.toLowerCase().includes(searchStr)) ||
+          (leccion.distancia && leccion.distancia.toString().includes(searchStr)) ||
+          (leccion.fecha_orden && leccion.fecha_orden.toLowerCase().includes(searchStr)) ||
+          (leccion.numero_orden && leccion.numero_orden.toLowerCase().includes(searchStr))
+        );
+      });
+      
+      lecciones.value = leccionesFiltradas;
+    }
+  } catch (error) {
+    console.error('Error en la búsqueda:', error);
+    lecciones.value = [];
+  } finally {
+    cargando.value = false;
+  }
+};
+
 const cargarFracciones = async (leccion) => {
   leccionActual.value = leccion; // Guarda leccion actual
   try {
@@ -538,6 +675,34 @@ const inicializarCarril = async () => {
   }
 };
 
+// Función para verificar caché
+const obtenerDatosCache = (key) => {
+  const datosCache = cacheDatos.value.get(key);
+  if (datosCache && Date.now() - datosCache.timestamp < tiempoCache) {
+    return datosCache.data;
+  }
+  return null;
+};
+
+// Función para guardar en caché
+const guardarEnCache = (key, data) => {
+  cacheDatos.value.set(key, {
+    data,
+    timestamp: Date.now()
+  });
+};
+
+// Función para manejar el scroll infinito
+const manejarScroll = async (event) => {
+  const element = event.target;
+  if (
+    element.scrollHeight - element.scrollTop <= element.clientHeight * 1.5 &&
+    !cargando.value &&
+    !todosLosDatosCargados.value
+  ) {
+    await cargarMasDatos();
+  }
+};
 
 // Cargar polígonos y lecciones al montar
 onMounted(() => {
@@ -547,47 +712,147 @@ onMounted(() => {
 </script>
 
 <style scoped>
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 400px;
-  margin: 0 auto;
+/* Remover estilos que interfieren con el Modal */
+.form-modal {
+  /* Los estilos del formulario vendrán del Modal.vue */
 }
 
-button {
-  padding: 0.5rem;
-  cursor: pointer;
+h1 {
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  margin-bottom: 1rem;
+  color: aliceblue;
+  text-align: center;
+}
+
+h2 {
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  color: aliceblue;
+  margin-bottom: 1rem;
+}
+
+h3 {
+  color: aliceblue;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.poligono-container {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.poligono-info {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
 }
 
 label {
   color: aliceblue;
+  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 0.3rem;
 }
 
-h1 {
-  text-align: center;
-  font-size: 2rem;
+select {
+  width: 100%;
+  max-width: 300px;
+  padding: 0.6rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: aliceblue;
+  margin-bottom: 0.5rem;
+}
+
+select:focus {
+  outline: none;
+  border-color: #4a9eff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+button {
+  background: #4a9eff;
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-right: 0.5rem;
   margin-bottom: 1rem;
-  color: aliceblue;
 }
 
-h2 {
-  text-align: center;
-  color: aliceblue;
-}
-h3 {
-  color: aliceblue;
+button:hover {
+  background: #3d8be6;
 }
 
-p {
-  text-align: center;
-  font-size: 1.2rem;
-  color: aliceblue;
-}
-.poligono-info {
+.actions-container {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  gap: 1rem;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  flex: 1;
+  max-width: 300px;
+  padding: 0.6rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: aliceblue;
+  font-size: 0.9rem;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #4a9eff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-left-color: #4a9eff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.table-container {
+  position: relative;
+  min-height: 200px;
+}
+
+.no-data {
+  text-align: center;
+  color: aliceblue;
+  padding: 2rem;
+  font-style: italic;
 }
 </style>

@@ -1,8 +1,9 @@
 import { createStore } from 'vuex';
-import axios from '../axios';
+import axios from '@/axios';
 
 const store = createStore({
   state: {
+    user: null,
     userType: localStorage.getItem('userType') || '',
     isAuthenticated: !!localStorage.getItem('accessToken'),
     poligonos: [],
@@ -10,15 +11,16 @@ const store = createStore({
     fracciones: [],
     tiradores: [],
     usuarios: [],
+    armas: [],
+    resultados: [],
   },
   mutations: {
+    setUser(state, user) {
+      state.user = user;
+    },
     setUserType(state, userType) {
       state.userType = userType;
       localStorage.setItem('userType', userType);
-    },
-    // Mutacion que maneja un solo usuario (usuario actual)
-    setUser(state, user) {
-      state.user = user;
     },
     setToken(state, token) {
       state.isAuthenticated = true;
@@ -27,8 +29,6 @@ const store = createStore({
     setId(state, id_usuario) {
       localStorage.setItem('id_usuario', id_usuario);
     },
-    // Mutacion para un listado de usuarios (setUser y setUsuarios se pueden combinar)
-    // pero preferí manejarlos por separado para tener más control
     setUsuarios(state, usuarios) {
       state.usuarios = usuarios;
     },
@@ -36,8 +36,16 @@ const store = createStore({
       state.armas = armas;
     },
     logout(state) {
+      state.user = null;
       state.userType = '';
       state.isAuthenticated = false;
+      state.poligonos = [];
+      state.lecciones = [];
+      state.fracciones = [];
+      state.tiradores = [];
+      state.usuarios = [];
+      state.armas = [];
+      state.resultados = [];
       localStorage.removeItem('accessToken');
       localStorage.removeItem('userType');
       localStorage.removeItem('id_usuario');
@@ -54,24 +62,32 @@ const store = createStore({
     setTiradores(state, tiradores) {
       state.tiradores = tiradores;
     },
+    setResultados(state, resultados) {
+      state.resultados = resultados;
+    },
   },
   actions: {
-    // Autenticacion/manejo de usuario actual
-    async fetchUser({ commit }) {
+    async fetchUser({ commit, state }) {
       try {
+        // Si ya tenemos los datos del usuario en el estado, los retornamos directamente
+        if (state.user) {
+          return state.user;
+        }
+
         const token = localStorage.getItem('accessToken');
         
-        console.log('Token de acceso: ', token);
         if (!token) {
           throw new Error('No se encontró el token de acceso');
         }
+
         const response = await axios.get(`usuarios/${localStorage.getItem('id_usuario')}`, {
           headers: {Authorization: `Token ${token}`},
         });
-        console.log('Información del perfil: ', response.data);
         commit('setUser', response.data);
+        return response.data;
       } catch (error) {
         console.error('Error al obtener la información del perfil', error);
+        throw error;
       }
     },
     login({ commit }, { token, id_usuario, userType }) {
@@ -82,24 +98,55 @@ const store = createStore({
     logout({ commit }) {
       commit('logout');
     },
-
-    // Polígonos, Lecciones, Fracciones y Tiradores
     async fetchPoligonos({ commit }) {
       try {
         const response = await axios.get('poligonos/');
         commit('setPoligonos', response.data);
-        //console.log('Poligonos: ', response.data);
+        return response.data;
       } catch (error) {
-        console.error('Error al obtener los poligonos', error);
+        console.error('Error al obtener polígonos:', error);
+        throw error;
       }
     },
-    async fetchLecciones({ commit }, poligonoId) {
+    async fetchLecciones({ commit }, { id_poligono, pagina, limite }) {
       try {
-        const response = await axios.get(`poligonos/${poligonoId}/lecciones`);
+        const response = await axios.get(`poligonos/${id_poligono}/lecciones/`, {
+          params: {
+            page: pagina,
+            limit: limite
+          }
+        });
         commit('setLecciones', response.data);
-        //console.log('Lecciones: ', response.data);
+        return {
+          data: response.data,
+          total: response.data.length
+        };
       } catch (error) {
         console.error('Error al obtener las lecciones', error);
+        return {
+          data: [],
+          total: 0
+        };
+      }
+    },
+    async buscarLecciones({ commit }, { id_poligono, query }) {
+      try {
+        const response = await axios.get(`poligonos/${id_poligono}/lecciones/`, {
+          params: {
+            search: query
+          }
+        });
+        commit('setLecciones', response.data);
+        return {
+          data: response.data,
+          total: response.data.length
+        };
+      } catch (error) {
+        console.error('Error en la búsqueda de lecciones', error);
+        return {
+          data: [],
+          total: 0
+        };
       }
     },
     async fetchFracciones({ commit }, idLeccion) {
@@ -141,7 +188,6 @@ const store = createStore({
         console.error('Error al crear el poligono', error);
       }
     },
-    // Crear una leccion
     async crearLeccion({ commit }, leccionData) {
       try {
         const response = await axios.post(`lecciones/`, leccionData);
@@ -151,7 +197,6 @@ const store = createStore({
         console.error('Error al crear la leccion', error);
       }
     },
-    // Crear una fraccion
     async crearFraccion({ }, fraccionData) {
       try {
         console.log('Fracción a crear: ', fraccionData);
@@ -161,25 +206,24 @@ const store = createStore({
         console.error('Error al crear la fracción', error);
       }
     },
-
-    //Módulo de usuarios, armas y resultados
-
-    // Obtener todos los usuarios de la BD
     async fetchUsuarios({ commit }) {
       try {
         const response = await axios.get('usuarios/');
         commit('setUsuarios', response.data);
+        return response.data;
       } catch (error) {
-        console.error('Error al obtener los usuarios', error);
+        console.error('Error al obtener usuarios:', error);
+        throw error;
       }
     },
-    // Obtener todas las armas de la BD
     async fetchArmas({ commit }) {
       try {
         const response = await axios.get('armas/');
         commit('setArmas', response.data);
+        return response.data;
       } catch (error) {
-        console.error('Error al obtener las armas', error);
+        console.error('Error al obtener armas:', error);
+        throw error;
       }
     },
     async crearUsuario({ commit }, usuarioData) {
@@ -210,10 +254,8 @@ const store = createStore({
         throw error;
       }
     },
-    // Actualizar datos de usuario
     async updateUser({ commit }, {idUsuario = null, updateData}) {
       try {
-        // Si no recibe el id del usuario, se toma el id del usuario actual
         const userId = idUsuario || localStorage.getItem('id_usuario');
 
         if (!userId) {
@@ -223,7 +265,6 @@ const store = createStore({
         const response = await axios.patch(`usuarios/${userId}/`, updateData);
         console.log('Usuario actualizado(vuex): ', response.data);
 
-        // Si se actualiza el usuario actual, se actualiza el state
         if (idUsuario === null || userId === localStorage.getItem('id_usuario')) {
         commit('setUser', response.data);
         }
@@ -233,35 +274,13 @@ const store = createStore({
         throw error;
       }
     },
-    // Cambiar contraseña
-/*     async cambiarContrasena({ state }, {old_password, new_password}) {
-      try {
-        //const token = localStorage.getItem('accessToken');
-        const idUsuario = localStorage.getItem('id_usuario');
-        console.log('Datos de cambio', idUsuario, old_password, new_password);
-        const response = await axios.post(
-          `usuarios/${idUsuario}/cambiar-contrasena/`,
-          { old_password, new_password }, 
-
-        );
-         console.log('Contraseña cambiada: ', response.data);
-         return response.data;
-
-      } catch (error) {
-        console.error('Error al cambiar la contraseña', error.response.data);
-        throw error;
-      }
-    }, */
-
     async cambiarContrasena({ state }, { idUsuario = null, old_password = null, new_password }) {
       try {
-        // si no se especifica el idUsuario, usamos el usuario logeado
         idUsuario = idUsuario || localStorage.getItem('id_usuario');
 
-        // si se proporciona "old_password", asumimos que es un cambio para el usuario logeado
         const data = old_password
-        ? { old_password, new_password } // Cambiar contraseña del usuario logeado
-        : { new_password }; // Cambiar contraseña de otro usuario
+        ? { old_password, new_password }
+        : { new_password };
 
         console.log('Datos de cambio', idUsuario, data);
 
@@ -275,7 +294,6 @@ const store = createStore({
         throw error;
       }
     },
-
     async eliminarUsuario({ commit }, idUsuario) {
       try {
         const response = await axios.delete(`usuarios/${idUsuario}/`);
@@ -284,8 +302,53 @@ const store = createStore({
         console.error('Error al eliminar el usuario', error);
         throw error;
       }
+    },
+    async fetchLeccionesPoligono({ commit }, idPoligono) {
+      try {
+        const response = await axios.get(`poligonos/${idPoligono}/lecciones/`);
+        return response.data;
+      } catch (error) {
+        console.error('Error al obtener lecciones del polígono:', error);
+        throw error;
+      }
+    },
+    async fetchResultadosLeccion({ commit }, idLeccion) {
+      try {
+        const response = await axios.get(`lecciones/${idLeccion}/resultados/`);
+        return response.data;
+      } catch (error) {
+        console.error('Error al obtener resultados de la lección:', error);
+        throw error;
+      }
+    },
+    async fetchUsuariosLeccion({ commit }, idLeccion) {
+      try {
+        const response = await axios.get(`lecciones/${idLeccion}/usuarios/`);
+        return response.data;
+      } catch (error) {
+        console.error('Error al obtener usuarios de la lección:', error);
+        throw error;
+      }
+    },
+    async fetchResultados({ commit }) {
+      try {
+        const response = await axios.get('resultados/');
+        const resultadosConId = response.data.map(resultado => ({
+          ...resultado,
+          id_resultado: resultado.id_resultado || resultado.id // Aseguramos que siempre haya un id único
+        }));
+        commit('setResultados', resultadosConId);
+        return resultadosConId;
+      } catch (error) {
+        console.error('Error al obtener resultados:', error);
+        throw error;
+      }
     }
   },
+  getters: {
+    isAuthenticated: state => !!state.user,
+    userType: state => state.userType
+  }
 });
 
 export default store;

@@ -1,28 +1,34 @@
 <template>
-  <div class="background-image"></div>
-  <div class="background-overlay"></div>
-  <div class="layout-container">
-    <Dashboard>
-      <router-view />
-    </Dashboard>
-
+  <div class="layout-wrapper">
+    <div class="background-image"></div>
+    <div class="background-overlay"></div>
+    <div class="layout-container">
+      <Dashboard>
+        <router-view />
+      </Dashboard>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { defineEmits } from 'vue';
 import Dashboard from '../components/Dashboard.vue';
 
-const emit = defineEmits(['switchView']);
+defineEmits(['switchView']);
 </script>
 
 <style scoped>
+.layout-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
 /* Asegurar que el body no tiene margen */
 body {
   margin: 0;
   overflow: hidden;
 }
-
 
 /* Contenedor principal */
 .layout-container {
