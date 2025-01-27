@@ -36,31 +36,53 @@ const store = useStore();
 const router = useRouter();
 const userType = computed(() => store.state.userType);
 const isSidebarCollapsed = ref(false);
+const currentRoute = computed(() => router.currentRoute.value.path);
 
 const toggleSidebar = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value;
+};
+
+const isMenuItemActive = (menuItem) => {
+  const path = currentRoute.value.toLowerCase();
+  switch (menuItem) {
+    case 'INICIO':
+      return path === '/' || path === `/${userType.value}`;
+    case 'CREAR LECCIÓN':
+      return path.includes('crear-leccion');
+    case 'BUSCAR':
+      return path.includes('buscar');
+    case 'USUARIOS':
+      return path.includes('usuarios-listar');
+    case 'ARMAS':
+      return path.includes('armas-unidades');
+    case 'PERFIL':
+      return path.includes('perfil');
+    case 'CONFIGURACIÓN':
+      return path.includes('configuracion');
+    default:
+      return false;
+  }
 };
 
 const menuItemsSuperior = computed(() => {
   switch (userType.value) {
     case 'admin':
       return [
-        { text: 'INICIO' },
-        { text: 'CREAR LECCIÓN', active: true },
-        { text: 'BUSCAR' },
-        { text: 'USUARIOS' },
+        { text: 'INICIO', active: isMenuItemActive('INICIO') },
+        { text: 'CREAR LECCIÓN', active: isMenuItemActive('CREAR LECCIÓN') },
+        { text: 'BUSCAR', active: isMenuItemActive('BUSCAR') },
+        { text: 'USUARIOS', active: isMenuItemActive('USUARIOS') },
       ];
     case 'limitado':
       return [
-        { text: 'INICIO', active: true },
-        //{ text: 'CREAR LECCIÓN' },
-        { text: 'ARMAS' }
+        { text: 'INICIO', active: isMenuItemActive('INICIO') },
+        { text: 'ARMAS', active: isMenuItemActive('ARMAS') }
       ];
     case 'tirador':
       return [
-        { text: 'INICIO', active: true },
-        { text: 'MIS LECCIONES' },
-        { text: 'PERFIL' }
+        { text: 'INICIO', active: isMenuItemActive('INICIO') },
+        { text: 'MIS LECCIONES', active: isMenuItemActive('MIS LECCIONES') },
+        { text: 'PERFIL', active: isMenuItemActive('PERFIL') }
       ];
     default:
       return [];
@@ -69,8 +91,8 @@ const menuItemsSuperior = computed(() => {
 
 const menuItemsInferior = computed(() => {
   return [
-    { text: 'PERFIL' },
-    { text: 'CONFIGURACIÓN' },
+    { text: 'PERFIL', active: isMenuItemActive('PERFIL') },
+    { text: 'CONFIGURACIÓN', active: isMenuItemActive('CONFIGURACIÓN') },
     { logOutButton: 'CERRAR SESIÓN' }
   ];
 });
@@ -105,15 +127,25 @@ const logout = () => {
   display: flex;
   height: 100vh;
   background-color: #f0f2f5;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
 }
 
 .sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
   width: 250px;
   background-color: transparent;
-  background-image: url('@/assets/fondosWeb/FondoDashboard.jpg') ; /* Ruta correcta */
-  background-size: cover; /* Ajusta la imagen para que cubra todo el espacio */
-  background-position: center; /* Centra la imagen */
-  background-repeat: no-repeat; /* Evita que la imagen se repita */
+  background-image: url('@/assets/fondosWeb/FondoDashboard.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   text-align: center;
   color: white;
   transition: width 0.3s ease;
@@ -121,6 +153,7 @@ const logout = () => {
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
+  z-index: 20;
 }
 
 .sidebar.collapsed {
@@ -160,7 +193,12 @@ const logout = () => {
 .content {
   flex: 1;
   padding: 20px;
+  margin-left: 250px;
+  height: 100vh;
+  overflow-y: auto;
   transition: margin-left 0.3s ease;
+  position: relative;
+  z-index: 15;
 }
 
 .content.expanded {
@@ -169,9 +207,6 @@ const logout = () => {
 
 @media screen and (max-width: 768px) {
   .sidebar {
-    position: fixed;
-    height: 100%;
-    z-index: 1000;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
   }

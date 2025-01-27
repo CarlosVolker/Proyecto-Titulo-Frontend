@@ -40,23 +40,21 @@
 </template>
 
 <script setup>
-import { ref, computed, defineProps, defineEmits } from 'vue';
+import { ref, computed } from 'vue';
 import axios from '@/axios';
 
-
-// Recibir las propiedades del componente
 const props = defineProps({
   columns: {
     type: Array,
-    default: () => []
+    required: true
   },
   rows: {
-    type: [Array, Object],
+    type: Array,
     required: true
   },
   rowKey: {
     type: String,
-    default: 'id' // Definir valor predeterminado para rowKey
+    required: true
   },
   showEditButton: {
     type: Boolean,
@@ -64,7 +62,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits();
+const emit = defineEmits(['row-click', 'scroll']);
 const isEditing = ref({});  // Mantener el estado de edición de cada celda
 
 const rowsArray = computed(() => {

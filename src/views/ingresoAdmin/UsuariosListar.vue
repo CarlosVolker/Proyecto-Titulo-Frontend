@@ -19,7 +19,7 @@
             @close="cerrarModal">
             <template v-if="usuarios">
               <form @submit.prevent="guardarCambios" class="form-modal">
-                <div class="form-header">
+                <div class="form-header" v-if="!esCreacion">
                   <button type="button" @click="habilitarEdicion">
                     {{ editable ? 'Cancelar Edición' : 'Editar' }}
                   </button>
@@ -27,80 +27,95 @@
 
                 <div class="form-grid">
                   <div class="form-group">
-                    <label class="label-modal">RUT</label>
-                    <input type="text" id="rut" v-model="usuarioSeleccionado.rut" placeholder="RUT" :disabled="!editable" required />
+                    <label>RUT</label>
+                    <input type="text" id="rut" v-model="usuarioSeleccionado.rut" placeholder="Ingrese RUT" :disabled="!editable && !esCreacion" required />
                   </div>
 
                   <div class="form-group">
-                    <label class="label-modal">Grado</label>
-                    <input type="text" id="grado" v-model="usuarioSeleccionado.grado" placeholder="Grado" :disabled="!editable" />
+                    <label>Grado</label>
+                    <input type="text" id="grado" v-model="usuarioSeleccionado.grado" placeholder="Ingrese Grado" :disabled="!editable && !esCreacion" />
                   </div>
 
                   <div class="form-group">
-                    <label class="label-modal">Apellido Paterno</label>
-                    <input type="text" id="apellido_paterno" v-model="usuarioSeleccionado.apellido_paterno" placeholder="Apellido paterno" :disabled="!editable" />
+                    <label>Apellido Paterno</label>
+                    <input type="text" id="apellido_paterno" v-model="usuarioSeleccionado.apellido_paterno" placeholder="Ingrese Apellido Paterno" :disabled="!editable && !esCreacion" />
                   </div>
 
                   <div class="form-group">
-                    <label class="label-modal">Apellido Materno</label>
-                    <input type="text" id="apellido_materno" v-model="usuarioSeleccionado.apellido_materno" placeholder="Apellido materno" :disabled="!editable" />
+                    <label>Apellido Materno</label>
+                    <input type="text" id="apellido_materno" v-model="usuarioSeleccionado.apellido_materno" placeholder="Ingrese Apellido Materno" :disabled="!editable && !esCreacion" />
                   </div>
 
                   <div class="form-group">
-                    <label class="label-modal">Nombre</label>
-                    <input type="text" id="nombre" v-model="usuarioSeleccionado.nombre" placeholder="Nombre" :disabled="!editable" />
+                    <label>Nombre</label>
+                    <input type="text" id="nombre" v-model="usuarioSeleccionado.nombre" placeholder="Ingrese Nombre" :disabled="!editable && !esCreacion" />
                   </div>
 
                   <div class="form-group">
-                    <label class="label-modal">Correo Electrónico</label>
-                    <input type="text" id="correo" v-model="usuarioSeleccionado.correo" placeholder="Correo" :disabled="!editable" />
+                    <label>Correo</label>
+                    <input type="text" id="correo" v-model="usuarioSeleccionado.correo" placeholder="Ingrese Correo" :disabled="!editable && !esCreacion" />
                   </div>
 
                   <div class="form-group">
-                    <label class="label-modal">Rol</label>
-                    <input type="text" id="rol" v-model="usuarioSeleccionado.rol" placeholder="Rol" :disabled="!editable" />
+                    <label>Rol</label>
+                    <input type="text" id="rol" v-model="usuarioSeleccionado.rol" placeholder="Ingrese Rol" :disabled="!editable && !esCreacion" />
                   </div>
 
                   <div class="form-group">
-                    <label class="label-modal">Unidad Regimentaria</label>
-                    <input type="text" id="unidad-regimentaria" v-model="usuarioSeleccionado.unidad_regimentaria" placeholder="Unidad Regimentaria" :disabled="!editable" />
+                    <label>Unidad Regimentaria</label>
+                    <input type="text" id="unidad-regimentaria" v-model="usuarioSeleccionado.unidad_regimentaria" placeholder="Ingrese Unidad Regimentaria" :disabled="!editable && !esCreacion" />
                   </div>
 
                   <div class="form-group">
-                    <label class="label-modal">Unidad de Combate</label>
-                    <input type="text" id="unidad-combate" v-model="usuarioSeleccionado.unidad_combate" placeholder="Unidad Combate" :disabled="!editable" />
+                    <label>Unidad de Combate</label>
+                    <input type="text" id="unidad-combate" v-model="usuarioSeleccionado.unidad_combate" placeholder="Ingrese Unidad de Combate" :disabled="!editable && !esCreacion" />
                   </div>
 
                   <div class="form-group">
-                    <label class="label-modal">Unidad Fundamental</label>
-                    <input type="text" id="unidad-fundamental" v-model="usuarioSeleccionado.unidad_fundamental" placeholder="Unidad Fundamental" :disabled="!editable" />
+                    <label>Unidad Fundamental</label>
+                    <input type="text" id="unidad-fundamental" v-model="usuarioSeleccionado.unidad_fundamental" placeholder="Ingrese Unidad Fundamental" :disabled="!editable && !esCreacion" />
                   </div>
 
                   <div class="form-group">
-                    <label class="label-modal">Habilitado para Iniciar Sesión</label>
+                    <label>¿Habilitado para iniciar sesión?</label>
                     <select
-                    v-model="usuarioSeleccionado.habilitado"
-                    :disabled="!editable"
-                    @change="actualizarEstadoHabilitado"
+                      v-model="usuarioSeleccionado.habilitado"
+                      :disabled="!editable && !esCreacion"
+                      @change="actualizarEstadoHabilitado"
                     >
-                    <option :value="true">Sí</option>
-                    <option :value="false">No</option>
+                      <option value="" disabled>Seleccione una opción</option>
+                      <option :value="true">Sí</option>
+                      <option :value="false">No</option>
                     </select>
                   </div>
                   <div class="form-group" v-if="usuarioSeleccionado.habilitado">
                     <button 
-                    type="button" 
-                    class="action-button" 
-                    @click="abrirModalPassword"
+                      type="button" 
+                      class="action-button" 
+                      @click="abrirModalPassword"
                     >
-                    {{ usuarioSeleccionado.habilitado ? 'Cambiar Contraseña' : 'Crear Contraseña' }}
-                  </button>
+                      {{ esCreacion ? 'Crear Contraseña' : 'Cambiar Contraseña' }}
+                    </button>
                   </div>
                 </div>
 
                 <div class="form-footer">
-                  <button type="submit" class="save-button">Guardar</button>
-                  <button type="button" @click="eliminarUsuario" class="save-button">Eliminar</button>
+                  <button 
+                    type="submit" 
+                    class="save-button"
+                    :disabled="guardando"
+                  >
+                    {{ guardando ? 'Guardando...' : 'Guardar' }}
+                  </button>
+                  <button 
+                    type="button" 
+                    v-if="!esCreacion" 
+                    @click="eliminarUsuario" 
+                    class="delete-button"
+                    :disabled="guardando"
+                  >
+                    Eliminar
+                  </button>
                 </div>
               </form>
             </template>
@@ -127,7 +142,13 @@
                   />
                 </div>
                 <div class="form-footer">
-                  <button type="submit" class="save-button">Guardar</button>
+                  <button 
+                    type="submit" 
+                    class="save-button"
+                    :disabled="guardandoPassword"
+                  >
+                    {{ guardandoPassword ? 'Guardando...' : 'Guardar' }}
+                  </button>
                 </div>
               </form>
             </Modal>
@@ -165,6 +186,9 @@ const usuarioSeleccionado = ref(null);
 const password = ref({nueva: '', confirmar: ''});//Campos del 2do modal
 const editable = ref(false);
 const busquedaEnLista = ref(''); // Input de busqueda
+const esCreacion = ref(false);
+const guardando = ref(false);
+const guardandoPassword = ref(false);
 
 const columnasUsuarios =ref ([
     { key: 'rut', label: 'RUT' },
@@ -232,6 +256,7 @@ const crearUsuarioModal = (row)=> {
     habilitado: 'true'
   };
   editable.value = true;
+  esCreacion.value = true;
   modalVisible.value = true;
 
 }
@@ -240,6 +265,7 @@ const editarUsuariosModal = (row) => {
   modalTitle.value = 'Editar Usuario';
   usuarioSeleccionado.value = {...row};
   editable.value = false;
+  esCreacion.value = false;
   modalVisible.value = true;
 };
 
@@ -247,6 +273,7 @@ const cerrarModal = () => {
   modalVisible.value = false;
   usuarioSeleccionado.value = null;
   editable.value = false;
+  esCreacion.value = false;
 };
 
 
@@ -282,35 +309,53 @@ const guardarPassword = async () => {
       alert('No se ha seleccionado un usuario válido');
       return;
     }
+    guardandoPassword.value = true;
     await store.dispatch('cambiarContrasena', {
       idUsuario: usuarioSeleccionado.value.id_usuario,
       new_password: password.value.nueva
     });
-    console.log('Contraseña cambiada para usuario:', usuarioSeleccionado.value.id_usuario);
+    console.log('Contraseña guardada para usuario:', usuarioSeleccionado.value.id_usuario);
     cerrarModalPassword();
-
+    if (esCreacion.value) {
+      cerrarModal();
+      await cargarUsuarios();
+    }
   } catch (error) {
-    alert('Error al guardar contraseña');
+    console.error('Error al guardar contraseña:', error);
+    alert('Error al guardar la contraseña');
+  } finally {
+    guardandoPassword.value = false;
   }
 };
 
 const guardarCambios = async () => {
   try {
+    guardando.value = true;
+    let nuevoUsuario;
     if (!usuarioSeleccionado.value.id_usuario) {
-      // Crea nuevo usuario
-      await store.dispatch('crearUsuario', usuarioSeleccionado.value);
+      // Crear nuevo usuario
+      nuevoUsuario = await store.dispatch('crearUsuario', usuarioSeleccionado.value);
+      if (nuevoUsuario && usuarioSeleccionado.value.habilitado === true) {
+        usuarioSeleccionado.value.id_usuario = nuevoUsuario.id_usuario;
+        abrirModalPassword();
+      } else {
+        await cargarUsuarios();
+        cerrarModal();
+      }
     } else {
-      // Actualizar un usuario existente
+      // Actualizar usuario existente
       await store.dispatch('updateUser', {
         idUsuario: usuarioSeleccionado.value.id_usuario,
         updateData: usuarioSeleccionado.value
       });
+      await cargarUsuarios();
+      cerrarModal();
     }
-    console.log('Usuario de la tabla actualizado', usuarioSeleccionado.value);
-    cargarUsuarios();
-    cerrarModal();
-  }catch (error) {
-    alert('Error al guardar cambios');
+  } catch (error) {
+    console.error('Error al guardar cambios:', error);
+    alert('Error al guardar los cambios del usuario');
+  } finally {
+    guardando.value = false;
   }
 };
 
@@ -328,95 +373,171 @@ const eliminarUsuario = async () => {
 </script>
 
 <style scoped>
+/* Remover estilos que interfieren con el Modal */
 .form-modal {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
-}
-
-.form-header {
-  text-align: center;
+  /* Los estilos del formulario vendrán del Modal.vue */
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2 columnas por defecto */
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
 }
 
-.label-modal {
-  font-weight: bold;
-  margin-bottom: 0.5rem;
+.form-group label {
+  color: aliceblue;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
-input {
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+.form-group input,
+.form-group select {
+  padding: 0.6rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: aliceblue;
+  font-size: 0.9rem;
+  width: 100%;
 }
 
-.save-button {
-  padding: 0.7rem 1rem;
-  border: none;
-  background: radial-gradient(#5d5d5d, #969696);
-  color: white;
-  font-size: 1rem;
-  border-radius: 5px;
-  transition: background var(--transition-time) ease;
-  cursor: pointer;
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #4a9eff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.action-button {
-  padding: 0.7rem 1rem;
-  background: radial-gradient(#424877, #7483a7);
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background var(--transition-time) ease;
-  font-size: 1rem;
+.form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
 }
 
-.action-button:hover {
-  background: #a3b3f2;
+.input-busqueda {
+  width: 100%;
+  max-width: 300px;
+  padding: 0.6rem 1rem;
+  margin-bottom: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: aliceblue;
+  font-size: 0.9rem;
 }
 
-.save-button:hover {
-  background: #90a08e;
+.input-busqueda:focus {
+  outline: none;
+  border-color: #4a9eff;
+  background: rgba(255, 255, 255, 0.1);
 }
-
-@media (max-width: 768px) {
-  .form-grid {
-    grid-template-columns: 1fr; /* Cambiar a 1 columna en pantallas pequeñas */
-  }
-}
-
 
 h1 {
-  text-align: center;
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
   margin-bottom: 1rem;
   color: aliceblue;
 }
 
-h2 {
-  text-align: center;
-  color: aliceblue;
-}
-h3 {
-  color: aliceblue;
-}
-
 p {
-  text-align: center;
-  font-size: 1.2rem;
   color: aliceblue;
+  margin-bottom: 1rem;
 }
 
+.save-button,
+.action-button {
+  background: #4a9eff;
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+}
+
+.save-button:hover,
+.action-button:hover {
+  background: #3d8be6;
+}
+
+.delete-button {
+  background: #ff4a4a;
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.delete-button:hover {
+  background: #e63d3d;
+}
+
+.save-button:disabled,
+.action-button:disabled,
+.delete-button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.save-button:disabled:hover,
+.action-button:disabled:hover,
+.delete-button:disabled:hover {
+  background: #cccccc;
+}
+
+.form-group select {
+  padding: 0.6rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: aliceblue;
+  font-size: 0.9rem;
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1em;
+  cursor: pointer;
+}
+
+.form-group select option {
+  background-color: #1a1a1a;
+  color: aliceblue;
+  padding: 0.6rem;
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: #4a9eff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.form-group select::-ms-expand {
+  display: none;
+}
+
+.form-group select option:hover,
+.form-group select option:focus,
+.form-group select option:active,
+.form-group select option:checked {
+  background-color: #4a9eff;
+  color: white;
+}
 </style>
